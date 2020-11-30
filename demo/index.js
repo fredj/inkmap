@@ -1,4 +1,4 @@
-import { print, downloadBlob } from '../src/main';
+import { print, downloadBlob, registerProjection } from '../src/main';
 
 document.querySelectorAll('.print-unit').forEach((unit) => {
   const specElt = unit.querySelector('.spec');
@@ -12,6 +12,8 @@ document.querySelectorAll('.print-unit').forEach((unit) => {
     waitBtn.style.display = null;
     progressBar.style.display = null;
     progressBarInner.style.width = '0';
+
+    registerProjection();
 
     print(JSON.parse(specElt.value)).then((imageBlob) => {
       // progressBarInner.style.width = Math.round(job.progress * 100) + '%'
