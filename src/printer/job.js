@@ -1,15 +1,19 @@
+import { createCanvasContext2D } from 'ol/dom';
+import { getForViewAndSize } from 'ol/extent';
+import { fromLonLat, get as getProjection } from 'ol/proj';
 import TileQueue, {
   getTilePriority as tilePriorityFunction,
 } from 'ol/TileQueue';
-import { fromLonLat, get as getProj } from 'ol/proj';
-import { getForViewAndSize } from 'ol/extent';
-import { createLayer } from './layers';
-import { createCanvasContext2D } from 'ol/dom';
 import { combineLatest, of } from 'rxjs';
 import { map, switchMap, takeWhile } from 'rxjs/operators';
-import { canvasToBlob } from './utils';
-import { messageToMain } from './exchange';
 import { MESSAGE_JOB_STATUS } from '../shared/constants';
+import {
+  registerWithExtent,
+  search as searchProjection,
+} from '../shared/projections';
+import { messageToMain } from './exchange';
+import { createLayer } from './layers';
+import { canvasToBlob } from './utils';
 
 let counter = 0;
 
@@ -19,8 +23,8 @@ let counter = 0;
  * until the job is over.
  * @param {PrintSpec} spec
  */
-export function createJob(spec) {
-  const frameState = getFrameState(spec);
+export async function createJob(spec) {
+  const frameState = await getFrameState(spec);
 
   /**
    * @type {PrintStatus}
@@ -75,8 +79,16 @@ export function createJob(spec) {
  * @param {PrintSpec} spec
  * @return {FrameState}
  */
-function getFrameState(spec) {
-  const projection = getProj(spec.projection);
+async function getFrameState(spec) {
+  let projection = getProjection(spec.projection);
+
+  if (!projection && spec.projection.startsWith('EPSG:')) {
+    const splitted = spec.projection.split(':');
+    const { name, proj4def, bbox } = await searchProjection(splitted[1]);
+    registerWithExtent(name, proj4def, bbox);
+    projection = getProjection(spec.projection);
+  }
+
   const inchPerMeter = 39.3701;
   const resolution =
     spec.scale / spec.dpi / inchPerMeter / projection.getMetersPerUnit();

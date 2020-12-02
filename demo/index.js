@@ -13,9 +13,13 @@ document.querySelectorAll('.print-unit').forEach((unit) => {
     progressBar.style.display = null;
     progressBarInner.style.width = '0';
 
-    registerProjection();
+    const spec = JSON.parse(specElt.value);
 
-    print(JSON.parse(specElt.value)).then((imageBlob) => {
+    if (spec.projectionDefinition) {
+      registerProjection(spec.projectionDefinition);
+    }
+
+    print(spec).then((imageBlob) => {
       // progressBarInner.style.width = Math.round(job.progress * 100) + '%'
 
       // console.log(job)
